@@ -11,7 +11,7 @@ import sys
 # the source file (less the .cpp extension) and is also used as the
 # binary name. The second element (if it exists) is a list of
 # additional files for the extractor
-
+build_example('streaming', 'BatchAnalysis')
 example_sources_fileio = [
     ('standard_beatsmarker', ),
     ('standard_fadedetection', ),
