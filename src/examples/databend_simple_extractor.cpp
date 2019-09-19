@@ -58,7 +58,6 @@ int main(int argc, char* argv[]) {
     Algorithm* zc               = factory.create("ZeroCrossingRate");
     Algorithm* entropy          = factory.create("Entropy");
     Algorithm* dynComplexity    = factory.create("DynamicComplexity");
-    Algorithm* loudness         = factory.create("LoudnessEBUR128");
     
     // data storage
     Pool pool;
@@ -71,12 +70,6 @@ int main(int argc, char* argv[]) {
     // Spectrum
     frameCutter->output("frame")            >>  window->input("frame");
     window->output("frame")                 >>  spectrum->input("frame");
-
-    // EBUR128 Loudness
-    audioload->output("audio")              >>  loudness->input("signal");
-    loudness->output("momentaryLoudness")   >>  PC(pool, "momentary_loudness")
-    loudness->output("shortTermLoudness")   >>  PC(pool, "shortterm_loudness")
-    loudness->output("integratedLoudness")  >>  PC(pool, "integrated_loudness")
 
     // YIN
     spectrum->output("spectrum")            >>  yin->input("spectrum");
