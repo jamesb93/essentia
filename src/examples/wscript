@@ -61,8 +61,8 @@ example_sources_fileio = [
     # ('streaming_vibrato', ),
     # ('streaming_yinprobabilistic', ),
     # ('streaming_batchanal', ),
-    ('streaming_databend_simple.cpp', ),
-    ('streaming_databend_complex.cpp', )
+    ('databend_simple_extractor', ),
+    ('databend_complex_extractor', )
 
     # ('streaming_extractor_music',
     #     ['music_extractor/extractor_utils']),
