@@ -1,4 +1,5 @@
 #include <iostream>
+#include <string>
 #include <essentia/algorithmfactory.h>
 #include <essentia/streaming/algorithms/poolstorage.h>
 #include <essentia/scheduler/network.h>
@@ -13,14 +14,16 @@ int main(int argc, char* argv[]) {
 
     string audioFilename = argv[1];
     string outputFilename = argv[2];
+    string frameSizeArg = argv[3];
+    string hopSizeArg = argv[4];
 
 
     // register the algorithms in the factory(ies)
     essentia::init();
 
     /////// PARAMS //////////////
-    int framesize = 8192;
-    int hopsize = 64;
+    int framesize = stol(frameSizeArg, NULL, 10);
+    int hopsize = stol(hopSizeArg, NULL, 10);
     int sr = 44100;
     vector<string> statistics = {
         "min",
@@ -43,21 +46,23 @@ int main(int argc, char* argv[]) {
     Algorithm* window           = factory.create("Windowing", "type", "hann");
     Algorithm* spectrum         = factory.create("Spectrum");
     Algorithm* yin              = factory.create("PitchYinFFT", "frameSize", framesize, "sampleRate", sr);
+    Algorithm* pitchSalience    = factory.create("PitchSalience", "highBoundary", 22050);
     Algorithm* specPeaks        = factory.create("SpectralPeaks", "minFrequency", 1);
     Algorithm* harmPeaks        = factory.create("HarmonicPeaks");
     Algorithm* dissonance       = factory.create("Dissonance");
-    Algorithm* tristim          = factory.create("Tristimulus");
     Algorithm* inharm           = factory.create("Inharmonicity");
-    Algorithm* specContrast     = factory.create("SpectralContrast", "frameSize", framesize);
     Algorithm* specComplexity   = factory.create("SpectralComplexity");
-    Algorithm* pitchSalience    = factory.create("PitchSalience");
     Algorithm* strongPeak       = factory.create("StrongPeak");
     Algorithm* flux             = factory.create("Flux");
     Algorithm* flatness         = factory.create("FlatnessDB");
-    Algorithm* moments          = factory.create("CentralMoments");
     Algorithm* zc               = factory.create("ZeroCrossingRate");
     Algorithm* entropy          = factory.create("Entropy");
     Algorithm* dynComplexity    = factory.create("DynamicComplexity");
+    Algorithm* specCentroid     = factory.create("Centroid", "range", 22050);
+
+    // Old algorithms //
+    // Algorithm* tristim          = factory.create("Tristimulus");
+    // Algorithm* specContrast     = factory.create("SpectralContrast", "frameSize", framesize);
     
     // data storage
     Pool pool;
@@ -79,14 +84,18 @@ int main(int argc, char* argv[]) {
     // Spectral Peaks
     spectrum->output("spectrum")            >>  specPeaks->input("spectrum");
 
+    // Spectral Centroid
+    spectrum->output("spectrum")            >> specCentroid->input("array");
+    specCentroid->output("centroid")        >> PC(pool, "spectral_centroid");
+
     // Spectral Complexity
     spectrum->output("spectrum")                    >>  specComplexity->input("spectrum");
     specComplexity->output("spectralComplexity")    >> PC(pool, "spectral_complexity");
 
     // Spectral Contrast
-    spectrum->output("spectrum")                >>  specContrast->input("spectrum");
-    specContrast->output("spectralContrast")    >>  PC(pool, "spectral_contrast");
-    specContrast->output("spectralValley")      >>  PC(pool, "spectral_valley");
+    // spectrum->output("spectrum")                >>  specContrast->input("spectrum");
+    // specContrast->output("spectralContrast")    >>  PC(pool, "spectral_contrast");
+    // specContrast->output("spectralValley")      >>  PC(pool, "spectral_valley");
 
     // Spectral Entropy
     spectrum->output("spectrum")            >>  entropy->input("array");
@@ -96,10 +105,6 @@ int main(int argc, char* argv[]) {
     // Spectral Flatness
     spectrum->output("spectrum")            >>  flatness->input("array");
     flatness->output("flatnessDB")          >>  PC(pool, "spectral_flatness_measure");
-
-    // Spectral Moments
-    spectrum->output("spectrum")            >>  moments->input("array");
-    moments->output("centralMoments")       >>  PC(pool, "spectral_moments");
 
     // Strong Peak
     spectrum->output("spectrum")            >>  strongPeak->input("spectrum");
@@ -123,10 +128,10 @@ int main(int argc, char* argv[]) {
     specPeaks->output("magnitudes")         >>  harmPeaks->input("magnitudes");
     yin->output("pitch")                    >>  harmPeaks->input("pitch");
 
-    // Tristimulus
-    harmPeaks->output("harmonicFrequencies")          >>  tristim->input("frequencies");
-    harmPeaks->output("harmonicMagnitudes")           >>  tristim->input("magnitudes");
-    tristim->output("tristimulus")                    >>  PC(pool, "tristimulus");
+    // // Tristimulus
+    // harmPeaks->output("harmonicFrequencies")          >>  tristim->input("frequencies");
+    // harmPeaks->output("harmonicMagnitudes")           >>  tristim->input("magnitudes");
+    // tristim->output("tristimulus")                    >>  PC(pool, "tristimulus");
 
     // Inharmonicity
     harmPeaks->output("harmonicFrequencies")          >>  inharm->input("frequencies");
